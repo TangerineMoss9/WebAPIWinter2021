@@ -8,7 +8,7 @@ app.get('/', function(req, res){
     res.sendFile(path.join(__dirname+'/views/index.html'))
 })
 
-app.use(express.static(__dirname+'/views'))
+app.use(express.static(__dirname+"/views"))
 
 app.listen(port, function(){
     console.log("connected on port 3000")
