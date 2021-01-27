@@ -1,51 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mongoose Lab Example</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
+
 <body>
-    <div id= "container">
+    <div id="container">
         <h1> Score List</h1>
         <nav>
-            <a href="index.html">Game</a>
-            <a href="#">Score List</a>
+            <a href="index.html">Back to Game</a>
+
         </nav>
+
         <script>
-            fetch('/getData').then(function(games){
-                games.json().then(function(thegames){
-                    console.log(thegames)
-                    for(let game of thegames.game){
-                        var gameElement = document.createElement('p')
-                        gameElement.innerHTML = game.game
-                        document.getElementById('container').appendChild(gameElement)
+            fetch('/getData').then(function (scores) {
+                scores.json().then(function (thescores) {
+                    console.log(thescores)
 
-                        //delete button
-                        var deleteBtn = document.createElement('button')
-                        deleteBtn.innerText = 'Delete'
-                        deleteBtn.addEventListener('click', function deleteGame(){
-                            location.reload()
-                            fetch('/deleteGame',{
-                            method:"POST",
-                            headers:{
-                                "Content-Type":"application/json"
-                            },
-                            body:JSON.stringify({
-                                _id:game._id
-                            })
+                    for (let score of thescores.score) {
+                        var scoreElement = document.createElement('p')
+                        scoreElement.innerHTML = score.score + " : " + score.pName
+                        document.getElementById('container').appendChild(scoreElement)
 
-                        })
-
-                        })
                         
-                        gameElement.appendChild(deleteBtn)
                     }
 
                 })
             })
         </script>
+        
+
     </div>
 </body>
+
 </html>

@@ -290,6 +290,7 @@ gameStates[1] = function(){
 //---Game Over Screen---
 gameStates[2] = function(){
     highScoreElements.style.display = "block";
+   
     if(score > highScore){
         highScore = score;
         ctx.save();
@@ -302,7 +303,7 @@ gameStates[2] = function(){
         ctx.font = "15px Arial";
         ctx.fillText("Press Enter to Start", c.width/2, c.height/2 + 20);
         ctx.restore();
-        
+        setScore(highScore);
         
     }
     else{
@@ -320,6 +321,7 @@ gameStates[2] = function(){
 
     
 }
+
 
 
 
