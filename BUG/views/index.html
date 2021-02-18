@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bug Tracking</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script>
+        function checkForm(){
+            if (document.getElementById('GameTitle').value == ""){
+                event.preventDefault();
+                document.getElementById('err').innerHTML = "Please enter a game to proceed"
+            }
+        }
+    </script>
+</head>
+<body>
+    <div id= "container">
+        <h1>Bug Entries</h1>
+        
+        <nav>
+            <a href="#">Bug Entry</a>
+            <a href="buglist.html">Bug List</a>
+        </nav>
+        <form action="/saveBug" method="POST" onsubmit="return checkForm()">
+            <span id="err" style="color: red;"></span>
+            <br>
+            <Label for="game"> Game Title:</Label>
+            <input type="text" placeholder="Game Title" name="Game_Name">
+            <br>
+            <Label for="game"> Reporter:</Label>
+            <input type="text" placeholder="Reporter" name="Reporter">
+            <br>
+            <Label for="game"> Bug Type:</Label>
+            <input type="text" placeholder="Bug Type" name="Bug_Type">
+            <br>
+            <Label for="game"> Description:</Label>
+            <input type="text" placeholder="Description" name="Description">
+            <br>
+            <Label for="game"> Status:</Label>
+            <input type="text" placeholder="Status" name="Status">
+            <br>
+            <button type="submit">Submit</button>
+        </form>
+    </div>
+</body>
+</html>

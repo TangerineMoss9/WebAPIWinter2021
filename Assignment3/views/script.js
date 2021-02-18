@@ -17,6 +17,9 @@ var cookieSprite = new Image();
 var highScoreElements = document.querySelector('.highscore');
 
 
+
+
+
 bgMain.src = "images/rocks.jpg";
 cookieSprite.src = "images/cookie.png";
 

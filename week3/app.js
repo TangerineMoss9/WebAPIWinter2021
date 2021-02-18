@@ -1,9 +1,16 @@
 var express = require('express')
 const { setFlagsFromString } = require('v8')
 var app = express()
+var mongoose = require('mongoose')
 var serv = require('http').Server(app)
 var io = require('socket.io')(serv,{})
 var debug = true
+
+require('./db')
+require('./models/Player')
+
+var PlayerData = mongoose.model('player')
+
 
 //File Communication===================================
 app.get('/', function(req,res){
@@ -141,8 +148,8 @@ Player.update = function(){
         pack.push({
             x: player.x,
             y: player.y,
-            number:player.number, 
-            id:player.id
+            number:player.number,
+            id:player.id 
         })
     }
 
@@ -204,6 +211,37 @@ Bullet.update = function(){
 }
 
 
+///====== User Collection setup
+
+var Players = {
+    "Matt":"123",
+    "Rob":"asd",
+    "Ron":"321",
+    "Jay":"ewq",
+}
+
+var isPasswordValid = function(data,cb){
+    PlayerData.findOne({username:data.username},function(err,username){
+        console.log(username.password, data.password)
+        cb(data.password == username.password)
+    })
+    
+
+    //return Players[data.username] === data.password
+}
+
+var isUsernameTaken = function(data){
+    PlayerData.findOne({username})
+   return Players[data.username]
+}
+
+var addUser = function(data){
+    //Players[data.username] = data.password
+    new PlayerData(data).save()
+
+}
+
+
 //Connection to game
 io.sockets.on('connection', function(socket){
     console.log("Socket Connected")
@@ -214,9 +252,42 @@ io.sockets.on('connection', function(socket){
    // socket.number = Math.floor(Math.random()*10)
     //add something to SocketList
     SocketList[socket.id] = socket
-    Player.onConnect(socket)
+   
+    
 
-    socket.emit('connected', socket.id)
+    //signIn event
+    socket.on('signIn',function(data){
+        
+        // if(isPasswordValid(data)){
+        //    Player.onConnect(socket)
+        //     //send the id to the client
+        //     socket.emit('connected', socket.id)
+        //     socket.emit('signInResponse',{success:true}) 
+        // }else{
+        //     socket.emit('signInResponse',{success:false}) 
+        // }
+
+        isPasswordValid(data,function(res){
+            if (res) {
+                Player.onConnect(socket)
+                //send the id to the client
+                socket.emit('connected', socket.id)
+                socket.emit('signInResponse', { success: true })
+            } else {
+                socket.emit('signInResponse', { success: false })
+            }
+        })
+    })
+
+    //signUp event
+    socket.on('signUp',function(data){
+        if(isUsernameTaken(data)){
+            socket.emit('signUpResponse',{success:false}) 
+        }else{
+            addUser(data)
+            socket.emit('signUpResponse',{success:true}) 
+        }
+    })
     
     //disconnection event
     socket.on('disconnect',function(){
@@ -240,7 +311,17 @@ io.sockets.on('connection', function(socket){
         var res = eval(data)
         socket.emit('evalResponse', res)
     })
-    
+    ///Old Examples from Wednesday 1/27
+    // socket.on('sendMsg',function(data){
+    //     console.log(data.message);
+    // })
+    // socket.on('sendBtnMsg',function(data){
+    //     console.log(data.message)
+    // })
+
+    // socket.emit('messageFromServer',{
+    //     message:'Hey Jordan Welcome to the party'
+    // })
 })
 
 //Setup Update Loop 
@@ -255,4 +336,3 @@ setInterval(function(){
         socket.emit('newPositions',pack)
     }
 }, 1000/30)
-

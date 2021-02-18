@@ -50,6 +50,13 @@
         var gameDiv = document.getElementById('gameDiv')
         var error = document.getElementById('err')
 
+
+
+
+
+
+
+
         //add event listeners for sign in buttons
         signDivSignIn.onclick = function () {
             socket.emit('signIn', { username: signDivUsername.value, password: signDivPassword.value })
@@ -85,6 +92,7 @@
         //Game related code====================================
         var canvas = document.getElementById('canvas')
         var ctx = canvas.getContext('2d')
+
         var chatText = document.getElementById('chat-text')
         var chatInput = document.getElementById('chat-input')
         var chatForm = document.getElementById('chat-form')
@@ -92,6 +100,14 @@
         var py = 0
         var clientId;
         ctx.font = '30px Arial'
+
+        var c = document.querySelector("canvas");
+
+
+        var bgMain = new Image();
+        var cookieSprite = new Image();
+        bgMain.src = "client/images/rocks.jpg";
+        cookieSprite.src = "client/images/cookie.png";
 
         socket.on('connected', function (data) {
             clientId = data
@@ -101,9 +117,7 @@
         //event listeners for keypresses and mouse clicks and mouse posiition
         document.addEventListener('keydown', keyPressDown)
         document.addEventListener('keyup', keyPressUp)
-        document.addEventListener('mousedown', mouseDown)
-        document.addEventListener('mouseup', mouseUp)
-        document.addEventListener('mousemove', mouseMove)
+
 
         function keyPressDown(e) {
             if (e.keyCode === 68)//right
@@ -112,8 +126,10 @@
                 socket.emit('keypress', { inputId: 'left', state: true })
             else if (e.keyCode === 87)//up
                 socket.emit('keypress', { inputId: 'up', state: true })
-            else if (e.keyCode === 83)//down
-                socket.emit('keypress', { inputId: 'down', state: true })
+
+            else if (e.keyCode === 13)//up
+                socket.emit('keypress', { inputId: 'enter', state: true }) 
+            
         }
 
         function keyPressUp(e) {
@@ -124,24 +140,11 @@
                 socket.emit('keypress', { inputId: 'left', state: false })
             else if (e.keyCode === 87)//up
                 socket.emit('keypress', { inputId: 'up', state: false })
-            else if (e.keyCode === 83)//down
-                socket.emit('keypress', { inputId: 'down', state: false })
+            else if (e.keyCode === 13)//up
+                socket.emit('keypress', { inputId: 'enter', state: false })
         }
 
-        function mouseDown(e) {
-            socket.emit('keypress', { inputId: 'attack', state: true })
-        }
 
-        function mouseUp(e) {
-            socket.emit('keypress', { inputId: 'attack', state: false })
-        }
-
-        function mouseMove(e) {
-            var x = -px + e.clientX - 8 // do not need to fix player id and positions
-            var y = -py + e.clientY - 96 // need to offset for header because 
-            var angle = Math.atan2(y, x) / Math.PI * 180
-            socket.emit('keypress', { inputId: 'mouseAngle', state: angle })
-        }
 
 
         socket.on('newPositions', function (data) {
@@ -151,10 +154,30 @@
                     px = data.player[i].x
                     py = data.player[i].y
                 }
-                ctx.fillText(data.player[i].number, data.player[i].x, data.player[i].y);
+                //ctx.fillText(data.player[i].number, data.player[i].x, data.player[i].y);
+
+                ctx.beginPath();
+                ctx.fillStyle = "red";
+                ctx.moveTo(data.player[i].x + 10, data.player[i].y);
+                ctx.lineTo(data.player[i].x + 20, data.player[i].y + 20);
+                ctx.lineTo(data.player[i].x, data.player[i].y + 20);
+                ctx.lineTo(data.player[i].x + 10, data.player[i].y);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.restore();
             }
-            for (var i = 0; i < data.bullet.length; i++) {
-                ctx.fillRect(data.bullet[i].x + 5, data.bullet[i].y - 10, 10, 10);
+            for (var i = 0; i < data.asteroid.length; i++) {
+                //ctx.fillArc(data.asteroid[i].x + 5, data.asteroid[i].y - 10, 10, 10);
+
+                ctx.beginPath()
+                ctx.arc(data.asteroid[i].x,data.asteroid[i].y,data.asteroid[i].radius, 0, 2 *Math.PI)
+                ctx.stroke()
+
+                ctx.drawImage(cookieSprite,data.asteroid[i].x - data.asteroid[i].radius, data.asteroid[i].y-data.asteroid[i].radius,data.asteroid[i].radius*2,data.asteroid[i].radius*2)
+                
+                
+
             }
         })
 
@@ -164,7 +187,7 @@
 
         socket.on('evalResponse', function (data) {
             chatText.innerHTML += `<div>${data}</div>`
-            console.log(data)
+            
         })
 
         chatForm.onsubmit = function (e) {
@@ -179,7 +202,9 @@
             chatInput.value = ""
         }
 
+        
 
+        
     </script>
 </body>
 

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bug Tracking</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id= "container">
+        <h1> Bug List</h1>
+        <nav>
+            <a href="index.html">Bug Entry</a>
+            <a href="#">Bug List</a>
+        </nav>
+        <script>
+            fetch('/getData').then(function(bugs){
+                bugs.json().then(function(thebugs){
+                    console.log(thebugs)
+                    for(let bug of thebugs.bug){
+                        var bugElement = document.createElement('p')
+                        bugElement.innerHTML = "Game: " + bug.Game_Name + 
+                            "<br> Reporter: " + bug.Reporter +
+                            "<br> Bug Type: " + bug.Bug_Type +
+                            "<br> Description: " + bug.Description +
+                            "<br> Sataus: " + bug.Status + "<br>"
+                        document.getElementById('container').appendChild(bugElement)
+
+                        
+
+                        //delete button
+                        var deleteBtn = document.createElement('button')
+                        deleteBtn.innerText = 'Delete'
+                        deleteBtn.addEventListener('click', function deleteBug(){
+                            location.reload()
+                            fetch('/deleteBug',{
+                            method:"POST",
+                            headers:{
+                                "Content-Type":"application/json"
+                            },
+                            body:JSON.stringify({
+                                _id:bug._id
+                            })
+
+                        })
+
+                        })
+                        
+                        bugElement.appendChild(deleteBtn)
+                    }
+
+                })
+            })
+        </script>
+    </div>
+</body>
+</html>

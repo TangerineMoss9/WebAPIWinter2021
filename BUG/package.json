@@ -1,6 +1,7 @@
 {
-  "name": "assignment2",
+  "name": "week2",
   "version": "1.0.0",
+  "description": "",
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -9,9 +10,6 @@
   "license": "ISC",
   "dependencies": {
     "express": "^4.17.1",
-    "mongoose": "^5.11.13",
-    "socket.io": "^3.1.1"
-  },
-  "devDependencies": {},
-  "description": ""
+    "mongoose": "^5.11.13"
+  }
 }
