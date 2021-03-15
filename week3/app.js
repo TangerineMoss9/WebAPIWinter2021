@@ -2,6 +2,7 @@ var express = require('express')
 const { setFlagsFromString } = require('v8')
 var app = express()
 var mongoose = require('mongoose')
+const { RSA_NO_PADDING } = require('constants')
 var serv = require('http').Server(app)
 var io = require('socket.io')(serv,{})
 var debug = true
@@ -14,6 +15,7 @@ var PlayerData = mongoose.model('player')
 
 //File Communication===================================
 app.get('/', function(req,res){
+   // console.log(err)
     res.sendFile(__dirname+'/client/index.html')
 })
 
@@ -65,6 +67,9 @@ var Player =function(id){
     self.attack = false
     self.mouseAngle = 0
     self.speed = 10
+    self.hp = 10
+    self.hpMax = 10
+    self.score = 0
     
     var playerUpdate = self.update
 
@@ -103,7 +108,32 @@ var Player =function(id){
         }
     }
 
+    self.getInitPack = function(){
+        return {
+            id:self.id,
+            x:self.x,
+            y:self.y,
+            number:self.number,
+            hp:self.hp,
+            hpMax:self.hpMax,
+            score:self.score
+        }
+    }
+
+    self.getUpdatePack = function(){
+        return {
+            id:self.id,
+            x:self.x,
+            y:self.y,
+            number:self.number,
+            hp:self.hp,
+            score:self.score
+        }
+    }
+
     Player.list[id] = self
+
+    initPack.player.push(self.getInitPack())
 
     return self
 }
@@ -132,10 +162,24 @@ Player.onConnect = function(socket){
         if(data.inputId === 'mouseAngle')
             player.mouseAngle = data.state
     })
+
+    socket.emit('init',{
+        player:Player.getAllInitPack(),
+        bullet:Bullet.getAllInitPack(),
+    })
+}
+
+Player.getAllInitPack = function(){
+    var players = []
+    for(var i in Player.list){
+        players.push(Player.list[i].getInitPack())
+    }
+    return players
 }
 
 Player.onDisconnect = function(socket){
     delete Player.list[socket.id]
+    removePack.player.push(socket.id)
 }
 
 Player.update = function(){
@@ -145,16 +189,13 @@ Player.update = function(){
         var player = Player.list[i]
         player.update()
         //console.log(player)
-        pack.push({
-            x: player.x,
-            y: player.y,
-            number:player.number,
-            id:player.id 
-        })
+        pack.push(player.getUpdatePack())
     }
 
     return pack
 }
+
+
 
 var Bullet = function(parent,angle){
     var self = GameObject()
@@ -167,6 +208,7 @@ var Bullet = function(parent,angle){
     self.toRemove = false
 
     var bulletUpdate = self.update
+
     self.update = function(){
         if(self.timer++ > 100){
             self.toRemove = true
@@ -175,12 +217,47 @@ var Bullet = function(parent,angle){
         for(var i in Player.list){
             var p = Player.list[i]
             if(self.getDist(p)<25 && self.parent !== p.id){
+                 //damage or hp for health
+                 p.hp -= 1
+
+                if(p.hp<= 0){
+                    var shooter = Player.list[self.parent]
+
+                    if(shooter){
+                        shooter.score += 1
+                    }
+
+                    p.hp = p.hpMax
+                    p.x = Math.random() * 800
+                    p.y = Math.random() * 600
+                }
+                
+                
+                
                 self.toRemove = true
-                //damage or hp for health
+               
             }
         }
     }
+
+    self.getInitPack = function(){
+        return {
+            id:self.id,
+            x:self.x,
+            y:self.y
+        }
+    }
+
+    self.getUpdatePack = function(){
+        return {
+            id:self.id,
+            x:self.x,
+            y:self.y
+        }
+    }
     Bullet.list[self.id] = self
+
+    initPack.bullet.push(self.getInitPack())
     return self
 }
 Bullet.list = {}
@@ -197,17 +274,24 @@ Bullet.update = function(){
         bullet.update()
         if(bullet.toRemove){
             delete Bullet.list[i]
+            removePack.bullet.push(bullet.id)
         }
         else{
-           pack.push({
-            x: bullet.x,
-            y: bullet.y
-            }) 
+           pack.push(bullet.getUpdatePack()) 
         }
         
     }
 
     return pack
+}
+
+Bullet.getAllInitPack = function(){
+    var bullets = []
+
+    for(var i in Bullet.list){
+        bullets.push(Bullet.list[i].getInitPack())
+    }
+    return bullets
 }
 
 
@@ -222,17 +306,25 @@ var Players = {
 
 var isPasswordValid = function(data,cb){
     PlayerData.findOne({username:data.username},function(err,username){
-        console.log(username.password, data.password)
-        cb(data.password == username.password)
+            //console.log(username.password, data.password)
+            cb(data.password == username.password)
     })
     
 
     //return Players[data.username] === data.password
 }
 
-var isUsernameTaken = function(data){
-    PlayerData.findOne({username})
-   return Players[data.username]
+var isUsernameTaken = function(data,cb){
+    PlayerData.findOne({username:data.username},function(err,username){
+        if(username == null){
+           cb(false) 
+        }
+        else{
+            cb(true)
+        }
+        
+  })
+   //return Players[data.username]
 }
 
 var addUser = function(data){
@@ -257,7 +349,7 @@ io.sockets.on('connection', function(socket){
 
     //signIn event
     socket.on('signIn',function(data){
-        
+        //old connection code without the callback function
         // if(isPasswordValid(data)){
         //    Player.onConnect(socket)
         //     //send the id to the client
@@ -281,12 +373,22 @@ io.sockets.on('connection', function(socket){
 
     //signUp event
     socket.on('signUp',function(data){
-        if(isUsernameTaken(data)){
+        // if(isUsernameTaken(data)){
+        //     socket.emit('signUpResponse',{success:false}) 
+        // }else{
+        //     addUser(data)
+        //     socket.emit('signUpResponse',{success:true}) 
+        // }
+
+     isUsernameTaken(data, function(res){
+        if(res){
             socket.emit('signUpResponse',{success:false}) 
         }else{
             addUser(data)
             socket.emit('signUpResponse',{success:true}) 
         }
+     })
+     
     })
     
     //disconnection event
@@ -324,6 +426,16 @@ io.sockets.on('connection', function(socket){
     // })
 })
 
+var initPack = {
+    player:[],
+    bullet:[]
+}
+
+var removePack = {
+    player:[],
+    bullet:[]
+}
+
 //Setup Update Loop 
 setInterval(function(){
     var pack = {
@@ -333,6 +445,12 @@ setInterval(function(){
   // var pack = Player.update();
     for (var i in SocketList) {
         var socket = SocketList[i]
-        socket.emit('newPositions',pack)
+        socket.emit('init',initPack)
+        socket.emit('update',pack)
+        socket.emit('remove',removePack)
     }
+    initPack.player = []
+    initPack.bullet = []
+    removePack.player = []
+    removePack.bullet = []
 }, 1000/30)

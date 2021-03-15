@@ -209,7 +209,7 @@ var Asteroid = function () {
 
     self.id = Math.random()
     self.spX = 0;
-    self.spY = randomRange(5, 1);
+    self.spY = randomRange(10, 5);
     self.color = "white";
 
 
